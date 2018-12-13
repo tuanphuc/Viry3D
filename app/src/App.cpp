@@ -33,7 +33,8 @@
 #include "DemoLightmap.h"
 #include "DemoSSAO.h"
 #include "DemoVR.h"
-#include "DemoCompute.h"
+#include "DemoComputeStorageImage.h"
+#include "DemoComputeStorageBuffer.h"
 #include "graphics/Display.h"
 #include "graphics/Camera.h"
 #include "ui/CanvasRenderer.h"
@@ -90,24 +91,8 @@ namespace Viry3D
             m_scroll->SetSize(Vector2i(VIEW_SIZE_FILL_PARENT, VIEW_SIZE_FILL_PARENT));
             m_scroll->SetOffset(Vector2i(0, 0));
 
-            Vector<String> titles({
-                "Mesh",
-                "SkinnedMesh",
-                "Skybox",
-                "RenderToTexture",
-                "FXAA",
-                "MSAA",
-                "PostEffectBlur",
-                "UI",
-                "ShadowMap",
-                "Audio",
-                "AR",
-                "Instancing & PBR",
-                "Lightmap",
-                "Deferred Shading & SSAO",
-                "VR",
-                "Compute"
-                });
+            Vector<String> titles({ "Mesh", "SkinnedMesh", "Skybox", "RenderToTexture", "FXAA", "MSAA", "PostEffectBlur", "UI", "ShadowMap", "Audio", "AR", "Instancing & PBR", "Lightmap",
+                                    "Deferred Shading & SSAO", "VR", "ComputeStorageImage", "ComputeStorageBuffer" });
 
             const int top = (int) (90 * UI_SCALE);
             const int button_height = (int) (160 * UI_SCALE);
@@ -128,12 +113,10 @@ namespace Viry3D
                 button->SetOffset(Vector2i(0, top + i * (button_height + button_space)));
                 button->GetLabel()->SetText(titles[i]);
                 button->GetLabel()->SetFontSize(font_size);
-                button->SetOnClick([=]() {
-                    this->ClickDemo(i);
-                });
+                button->SetOnClick([=]() { this->ClickDemo(i); });
 
                 bool disabled = false;
-                
+
 #if VR_GLES
                 if (i == 4)
                 {
@@ -143,11 +126,11 @@ namespace Viry3D
                     // and gles 2.0 / webgl 1.0 not support too,
                     // so disable fxaa on mac / gles 2.0,
                     // webgl 2.0 has wrong result, disable too.
-    #if VR_WASM
+#if VR_WASM
                     disabled = true;
-    #else
+#else
                     disabled = !Display::Instance()->IsGLESv3();
-    #endif
+#endif
                     if (disabled)
                     {
                         button->GetLabel()->SetText("FXAA (disabled on gles2 / webgl)");
@@ -180,7 +163,7 @@ namespace Viry3D
                     }
                 }
 #endif
-                
+
                 if (i == 10)
                 {
 #if VR_IOS
@@ -254,7 +237,10 @@ namespace Viry3D
                     m_demo = new DemoVR();
                     break;
                 case 15:
-                    m_demo = new DemoCompute();
+                    m_demo = new DemoComputeStorageImage();
+                    break;
+                case 16:
+                    m_demo = new DemoComputeStorageBuffer();
                     break;
                 default:
                     break;
@@ -288,9 +274,7 @@ namespace Viry3D
             button->SetPivot(Vector2(1, 1));
             button->GetLabel()->SetText("Back");
             button->GetLabel()->SetFontSize(font_size);
-            button->SetOnClick([=]() {
-                this->ClickBack();
-            });
+            button->SetOnClick([=]() { this->ClickBack(); });
         }
 
         void ClickBack()
@@ -379,4 +363,4 @@ namespace Viry3D
     {
         m_app->Update();
     }
-}
+} // namespace Viry3D

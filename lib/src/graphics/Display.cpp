@@ -134,7 +134,11 @@ namespace Viry3D
             assert(success);
 #elif VR_IOS || VR_MAC
             MVKShaderStage stage;
-            switch (shader_type) {
+            switch (shader_type)
+            {
+                case VK_SHADER_STAGE_COMPUTE_BIT:
+                    stage = kMVKShaderStageCompute;
+                    break;
                 case VK_SHADER_STAGE_VERTEX_BIT:
                     stage = kMVKShaderStageVertex;
                     break;
@@ -303,6 +307,7 @@ extern void UnbindSharedContext();
         VkCommandBuffer m_image_cmd = VK_NULL_HANDLE;
         VkCommandPool m_compute_cmd_pool = VK_NULL_HANDLE;
         VkCommandBuffer m_compute_cmd = VK_NULL_HANDLE;
+        bool m_has_compute_instance_cmds = false;
         Mutex m_image_cmd_mutex;
         Ref<Texture> m_depth_texture;
         bool m_primary_cmd_dirty = true;
@@ -785,7 +790,7 @@ extern void UnbindSharedContext();
             queue_info.pQueuePriorities = &queue_priority;
             queue_infos.Add(queue_info);
 
-            if (m_compute_queue_family_index >= 0)
+            if (m_compute_queue_family_index >= 0 && m_compute_queue_family_index != m_graphics_queue_family_index)
             {
                 queue_info.queueFamilyIndex = m_compute_queue_family_index;
                 queue_infos.Add(queue_info);
@@ -1186,8 +1191,8 @@ extern void UnbindSharedContext();
             }
             else
             {
-                color_final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                depth_final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                color_final_layout = VK_IMAGE_LAYOUT_GENERAL;
+                depth_final_layout = VK_IMAGE_LAYOUT_GENERAL;
             }
 
             Vector<VkAttachmentReference> color_references;
@@ -1453,7 +1458,6 @@ extern void UnbindSharedContext();
             }
             if (array_size > 1)
             {
-                flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
                 layer_count = array_size;
             }
 
@@ -1929,7 +1933,32 @@ extern void UnbindSharedContext();
 
             for (const auto& resource : resources.storage_buffers)
             {
+                uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+                uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+                const std::string& name = resource.name;
 
+                UniformSet* set_ptr = nullptr;
+                for (int i = 0; i < uniform_sets.Size(); ++i)
+                {
+                    if (set == uniform_sets[i].set)
+                    {
+                        set_ptr = &uniform_sets[i];
+                        break;
+                    }
+                }
+                if (set_ptr == nullptr)
+                {
+                    uniform_sets.Add(UniformSet());
+                    set_ptr = &uniform_sets[uniform_sets.Size() - 1];
+                    set_ptr->set = set;
+                }
+
+                StorageBuffer buffer;
+                buffer.name = name.c_str();
+                buffer.binding = (int) binding;
+                buffer.stage = shader_type;
+
+                set_ptr->storage_buffers.Add(buffer);
             }
         }
 
@@ -2048,6 +2077,21 @@ extern void UnbindSharedContext();
                     layout_bindings.Add(layout_binding);
                 }
 
+                for (int j = 0; j < uniform_sets[i].storage_buffers.Size(); ++j)
+                {
+                    const auto& buffer = uniform_sets[i].storage_buffers[j];
+
+                    VkDescriptorSetLayoutBinding layout_binding;
+                    Memory::Zero(&layout_binding, sizeof(layout_binding));
+                    layout_binding.binding = buffer.binding;
+                    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    layout_binding.descriptorCount = 1;
+                    layout_binding.stageFlags = buffer.stage;
+                    layout_binding.pImmutableSamplers = nullptr;
+
+                    layout_bindings.Add(layout_binding);
+                }
+
                 VkDescriptorSetLayoutCreateInfo descriptor_layout;
                 Memory::Zero(&descriptor_layout, sizeof(descriptor_layout));
                 descriptor_layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -2066,7 +2110,14 @@ extern void UnbindSharedContext();
             pipeline_layout_info.pNext = nullptr;
             pipeline_layout_info.flags = 0;
             pipeline_layout_info.setLayoutCount = descriptor_layouts.Size();
-            pipeline_layout_info.pSetLayouts = &descriptor_layouts[0];
+            if (descriptor_layouts.Size() > 0)
+            {
+                pipeline_layout_info.pSetLayouts = &descriptor_layouts[0];
+            }
+            else
+            {
+                pipeline_layout_info.pSetLayouts = nullptr;
+            }
             pipeline_layout_info.pushConstantRangeCount = 0;
             pipeline_layout_info.pPushConstantRanges = nullptr;
 
@@ -2371,7 +2422,7 @@ extern void UnbindSharedContext();
             pipeline_info.flags = 0;
             pipeline_info.stage = stage_info;
             pipeline_info.layout = pipeline_layout;
-            pipeline_info.basePipelineHandle = nullptr;
+            pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
             pipeline_info.basePipelineIndex = 0;
 
             VkResult err = vkCreateComputePipelines(m_device, pipeline_cache, 1, &pipeline_info, nullptr, pipeline);
@@ -2383,6 +2434,7 @@ extern void UnbindSharedContext();
             int buffer_count = 0;
             int texture_count = 0;
             int storage_image_count = 0;
+            int storage_buffer_count = 0;
 
             for (int i = 0; i < uniform_sets.Size(); ++i)
             {
@@ -2401,6 +2453,11 @@ extern void UnbindSharedContext();
                     {
                         ++texture_count;
                     }
+                }
+
+                for (int j = 0; j < uniform_sets[i].storage_buffers.Size(); ++j)
+                {
+                    ++storage_buffer_count;
                 }
             }
 
@@ -2424,6 +2481,13 @@ extern void UnbindSharedContext();
                 VkDescriptorPoolSize pool_size;
                 pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                 pool_size.descriptorCount = (uint32_t) storage_image_count * DESCRIPTOR_POOL_SIZE_MAX;
+                pool_sizes.Add(pool_size);
+            }
+            if (storage_buffer_count > 0)
+            {
+                VkDescriptorPoolSize pool_size;
+                pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                pool_size.descriptorCount = (uint32_t) storage_buffer_count * DESCRIPTOR_POOL_SIZE_MAX;
                 pool_sizes.Add(pool_size);
             }
             
@@ -2507,6 +2571,29 @@ extern void UnbindSharedContext();
             vkUpdateDescriptorSets(m_device, 1, &desc_write, 0, nullptr);
         }
 
+        void UpdateStorageBuffer(VkDescriptorSet descriptor_set, int binding, const Ref<BufferObject>& buffer)
+        {
+            VkDescriptorBufferInfo buffer_info;
+            buffer_info.buffer = buffer->GetBuffer();
+            buffer_info.offset = 0;
+            buffer_info.range = buffer->GetSize();
+
+            VkWriteDescriptorSet desc_write;
+            Memory::Zero(&desc_write, sizeof(desc_write));
+            desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            desc_write.pNext = nullptr;
+            desc_write.dstSet = descriptor_set;
+            desc_write.dstBinding = binding;
+            desc_write.dstArrayElement = 0;
+            desc_write.descriptorCount = 1;
+            desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            desc_write.pImageInfo = nullptr;
+            desc_write.pBufferInfo = &buffer_info;
+            desc_write.pTexelBufferView = nullptr;
+
+            vkUpdateDescriptorSets(m_device, 1, &desc_write, 0, nullptr);
+        }
+
         void BuildInstanceCmd(
             VkCommandBuffer cmd,
             VkRenderPass render_pass,
@@ -2543,7 +2630,10 @@ extern void UnbindSharedContext();
             assert(!err);
 
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_sets.Size(), &descriptor_sets[0], 0, nullptr);
+            if (descriptor_sets.Size() > 0)
+            {
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_sets.Size(), &descriptor_sets[0], 0, nullptr);
+            }
 
             VkViewport viewport;
             Memory::Zero(&viewport, sizeof(viewport));
@@ -2605,7 +2695,10 @@ extern void UnbindSharedContext();
             assert(!err);
 
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, descriptor_sets.Size(), &descriptor_sets[0], 0, nullptr);
+            if (descriptor_sets.Size() > 0)
+            {
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, descriptor_sets.Size(), &descriptor_sets[0], 0, nullptr);
+            }
 
             vkCmdDispatchIndirect(cmd, dispatch_buffer->GetBuffer(), 0);
 
@@ -2763,7 +2856,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                         { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         VK_ACCESS_SHADER_READ_BIT);
                 }
@@ -2775,7 +2868,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                         { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         VK_ACCESS_SHADER_READ_BIT);
                 }
@@ -2787,7 +2880,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
                         { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 },
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                         VK_ACCESS_SHADER_READ_BIT);
                 }
@@ -2826,7 +2919,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                         (VkAccessFlagBits) 0);
 
@@ -2836,7 +2929,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         (VkAccessFlagBits) 0);
 
@@ -2864,7 +2957,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                         { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_ACCESS_TRANSFER_READ_BIT);
 
                     this->SetImageLayout(
@@ -2874,7 +2967,7 @@ extern void UnbindSharedContext();
                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                         { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
                         VK_ACCESS_TRANSFER_WRITE_BIT);
                 }
             }
@@ -2884,10 +2977,7 @@ extern void UnbindSharedContext();
             VkCommandBuffer cmd,
             const Vector<VkCommandBuffer>& instance_cmds)
         {
-            if (instance_cmds.Size() > 0)
-            {
-                vkCmdExecuteCommands(cmd, (uint32_t) instance_cmds.Size(), &instance_cmds[0]);
-            }
+            vkCmdExecuteCommands(cmd, (uint32_t) instance_cmds.Size(), &instance_cmds[0]);
         }
 
         void BuildPrimaryCmds()
@@ -2902,9 +2992,15 @@ extern void UnbindSharedContext();
 
                 this->BuildPrimaryCmdBegin(cmd);
 
+                m_has_compute_instance_cmds = false;
                 for (auto j : m_cameras)
                 {
-                    this->BuildComputePrimaryCmd(cmd, j->GetComputeInstanceCmds());
+                    Vector<VkCommandBuffer> cmds = j->GetComputeInstanceCmds();
+                    if (cmds.Size() > 0)
+                    {
+                        m_has_compute_instance_cmds = true;
+                        this->BuildComputePrimaryCmd(cmd, cmds);
+                    }
                 }
 
                 this->BuildPrimaryCmdEnd(cmd);
@@ -2987,7 +3083,7 @@ extern void UnbindSharedContext();
 
             m_image_cmd_mutex.lock();
 
-            if (m_compute_queue != VK_NULL_HANDLE)
+            if (m_compute_queue != VK_NULL_HANDLE && m_has_compute_instance_cmds)
             {
                 VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
                 VkSubmitInfo submit_info;
@@ -4013,6 +4109,11 @@ void main()
     void Display::UpdateUniformTexture(VkDescriptorSet descriptor_set, int binding, bool is_storage, const Ref<Texture>& texture)
     {
         m_private->UpdateUniformTexture(descriptor_set, binding, is_storage, texture);
+    }
+
+    void Display::UpdateStorageBuffer(VkDescriptorSet descriptor_set, int binding, const Ref<BufferObject>& buffer)
+    {
+        m_private->UpdateStorageBuffer(descriptor_set, binding, buffer);
     }
 
     Ref<BufferObject> Display::CreateBuffer(const void* data, int size, VkBufferUsageFlags usage)
