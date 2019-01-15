@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -85,37 +85,37 @@ namespace Viry3D
 #if VR_VULKAN
             auto shader = RefMake<Shader>(
                 "#define CAST_SHADOW 1",
-                Vector<String>({ "Diffuse.vs.in" }),
+                Vector<String>({ "Diffuse.vs" }),
                 "",
                 "#define CAST_SHADOW 1",
-                Vector<String>({ "Diffuse.fs.in" }),
+                Vector<String>({ "Diffuse.fs" }),
                 "",
                 render_state);
             auto skin_shader = RefMake<Shader>(
                 "#define CAST_SHADOW 1\n"
                 "#define SKINNED_MESH 1",
-                Vector<String>({ "Skin.in", "Diffuse.vs.in" }),
+                Vector<String>({ "Skin.vs", "Diffuse.vs" }),
                 "",
                 "#define CAST_SHADOW 1",
-                Vector<String>({ "Diffuse.fs.in" }),
+                Vector<String>({ "Diffuse.fs" }),
                 "",
                 render_state);
 #elif VR_GLES
             auto shader = RefMake<Shader>(
                 "#define CAST_SHADOW 1",
-                Vector<String>({ "Diffuse.100.vs.in" }),
+                Vector<String>({ "Diffuse.100.vs" }),
                 "",
                 "#define CAST_SHADOW 1",
-                Vector<String>({ "Diffuse.100.fs.in" }),
+                Vector<String>({ "Diffuse.100.fs" }),
                 "",
                 render_state);
             auto skin_shader = RefMake<Shader>(
                 "#define CAST_SHADOW 1\n"
                 "#define SKINNED_MESH 1",
-                Vector<String>({ "Diffuse.100.vs.in" }),
+                Vector<String>({ "Diffuse.100.vs" }),
                 "",
                 "#define CAST_SHADOW 1",
-                Vector<String>({ "Diffuse.100.fs.in" }),
+                Vector<String>({ "Diffuse.100.fs" }),
                 "",
                 render_state);
 #endif
@@ -153,7 +153,7 @@ namespace Viry3D
                 m_shadow_camera->AddRenderer(shadow_mesh);
             }
 
-            m_blit_depth_camera = Display::Instance()->CreateBlitCamera(3, m_shadow_texture, Ref<Material>(), "", CameraClearFlags::Nothing, Rect(0.75f, 0, 0.25f, 0.25f));
+            m_blit_depth_camera = Display::Instance()->CreateBlitCamera(3, m_shadow_texture, CameraClearFlags::Nothing, Rect(0.75f, 0, 0.25f, 0.25f));
         }
 
         void InitShadowReciever()
@@ -163,39 +163,39 @@ namespace Viry3D
 #if VR_VULKAN
             auto shader = RefMake<Shader>(
                 "#define RECIEVE_SHADOW 1",
-                Vector<String>({ "Diffuse.vs.in" }),
+                Vector<String>({ "Diffuse.vs" }),
                 "",
                 "#define RECIEVE_SHADOW 1",
-                Vector<String>({ "Shadow.in", "Diffuse.fs.in" }),
+                Vector<String>({ "Shadow.fs", "Diffuse.fs" }),
                 "",
                 render_state);
             auto skin_shader = RefMake<Shader>(
                 "#define RECIEVE_SHADOW 1\n"
                 "#define SKINNED_MESH 1",
-                Vector<String>({ "Skin.in", "Diffuse.vs.in" }),
+                Vector<String>({ "Skin.vs", "Diffuse.vs" }),
                 "",
                 "#define RECIEVE_SHADOW 1",
-                Vector<String>({ "Shadow.in", "Diffuse.fs.in" }),
+                Vector<String>({ "Shadow.fs", "Diffuse.fs" }),
                 "",
                 render_state);
 #elif VR_GLES
             auto shader = RefMake<Shader>(
                 "#define RECIEVE_SHADOW 1",
-                Vector<String>({ "Diffuse.100.vs.in" }),
+                Vector<String>({ "Diffuse.100.vs" }),
                 "",
                 "#define RECIEVE_SHADOW 1\n"
                 "#define VERSION_100_ES 1",
-                Vector<String>({ "Shadow.in", "Diffuse.100.fs.in" }),
+                Vector<String>({ "Shadow.fs", "Diffuse.100.fs" }),
                 "",
                 render_state);
             auto skin_shader = RefMake<Shader>(
                 "#define RECIEVE_SHADOW 1\n"
                 "#define SKINNED_MESH 1",
-                Vector<String>({ "Diffuse.100.vs.in" }),
+                Vector<String>({ "Diffuse.100.vs" }),
                 "",
                 "#define RECIEVE_SHADOW 1\n"
                 "#define VERSION_100_ES 1",
-                Vector<String>({ "Shadow.in", "Diffuse.100.fs.in" }),
+                Vector<String>({ "Shadow.fs", "Diffuse.100.fs" }),
                 "",
                 render_state);
 #endif

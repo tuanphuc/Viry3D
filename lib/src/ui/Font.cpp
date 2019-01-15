@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -157,7 +157,7 @@ namespace Viry3D
 		p_glyph->mono = mono;
 
 		FT_Face face = (FT_Face) m_font;
-        FT_Set_Char_Size(face, size << 6, size << 6, 96, 96);
+        FT_Set_Char_Size(face, size << 6, size << 6, 0, 0);
 
 		FT_GlyphSlot slot = face->glyph;
 		auto glyph_index = FT_Get_Char_Index(face, c);

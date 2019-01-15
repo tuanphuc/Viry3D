@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ namespace Viry3D
             m_buffer(VK_NULL_HANDLE),
             m_memory(VK_NULL_HANDLE),
             m_buffer_view(VK_NULL_HANDLE),
+            m_device_local(false),
 #elif VR_GLES
             m_buffer(0),
             m_target(0),
@@ -61,6 +62,7 @@ namespace Viry3D
         const VkBuffer& GetBuffer() const { return m_buffer; }
         const VkDeviceMemory& GetMemory() const { return m_memory; }
         const VkBufferView& GetBufferView() const { return m_buffer_view; }
+        bool IsDeviceLocal() const { return m_device_local; }
 #elif VR_GLES
         ~BufferObject()
         {
@@ -83,6 +85,7 @@ namespace Viry3D
         VkDeviceMemory m_memory;
         VkMemoryAllocateInfo m_memory_info;
         VkBufferView m_buffer_view;
+        bool m_device_local;
 #elif VR_GLES
         GLuint m_buffer;
         GLenum m_target;

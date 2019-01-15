@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ namespace Viry3D
 
         if (!m_dispatch_buffer)
         {
-            m_dispatch_buffer = Display::Instance()->CreateBuffer(&dispatch, sizeof(dispatch), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_FORMAT_UNDEFINED);
+            m_dispatch_buffer = Display::Instance()->CreateBuffer(&dispatch, sizeof(dispatch), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, VK_FORMAT_UNDEFINED);
         }
         else
         {

@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ namespace Viry3D
         CanvasRenderer* GetCanvas() const;
         void AddSubview(const Ref<View>& view);
         void RemoveSubview(const Ref<View>& view);
+        void ClearSubviews();
         int GetSubviewCount() const { return m_subviews.Size(); }
         const Ref<View>& GetSubview(int index) const { return m_subviews[index]; }
         View* GetParentView() const { return m_parent_view; }

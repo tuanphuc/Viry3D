@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ namespace Viry3D
             auto shader = RefMake<Shader>(
                 "#define LIGHTMAP 1\n"
                 "#define MULTIVIEW 1",
-                Vector<String>({ "Diffuse.vs.in" }),
+                Vector<String>({ "Diffuse.vs" }),
                 "",
                 "#define LIGHTMAP 1",
-                Vector<String>({ "Diffuse.fs.in" }),
+                Vector<String>({ "Diffuse.fs" }),
                 "",
                 render_state);
             Shader::AddCache("Diffuse", shader);
@@ -117,7 +117,7 @@ void main()
             auto material = RefMake<Material>(shader);
             material->SetTexture("u_texture", color_texture);
 
-            m_blit_color_camera = Display::Instance()->CreateBlitCamera(1, Ref<Texture>(), material);
+            m_blit_color_camera = Display::Instance()->CreateBlitCamera(1, material);
 
             m_ui_camera->SetDepth(2);
         }

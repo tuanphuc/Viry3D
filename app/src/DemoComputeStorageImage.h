@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -99,8 +99,8 @@ void main()
 
             m_camera->AddRenderer(computer);
 
-            m_blit_origin_camera = Display::Instance()->CreateBlitCamera(1, compute_input, Ref<Material>(), "", CameraClearFlags::Nothing, Rect(0, 0, 0.5f, 1));
-            m_blit_result_camera = Display::Instance()->CreateBlitCamera(2, compute_output, Ref<Material>(), "", CameraClearFlags::Nothing, Rect(0.5, 0, 0.5f, 1));
+            m_blit_origin_camera = Display::Instance()->CreateBlitCamera(1, compute_input, CameraClearFlags::Nothing, Rect(0, 0, 0.5f, 1));
+            m_blit_result_camera = Display::Instance()->CreateBlitCamera(2, compute_output, CameraClearFlags::Nothing, Rect(0.5, 0, 0.5f, 1));
 
             m_ui_camera->SetDepth(3);
         }

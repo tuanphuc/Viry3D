@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -98,6 +98,19 @@ namespace Viry3D
         m_subviews.Remove(view);
 
         this->MarkCanvasDirty();
+    }
+
+    void View::ClearSubviews()
+    {
+        Vector<Ref<View>> subviews;
+        for (int i = 0; i < this->GetSubviewCount(); ++i)
+        {
+            subviews.Add(this->GetSubview(i));
+        }
+        for (int i = 0; i < subviews.Size(); ++i)
+        {
+            this->RemoveSubview(subviews[i]);
+        }
     }
 
 	void View::SetColor(const Color& color)
@@ -262,10 +275,8 @@ namespace Viry3D
 
     void View::ComputeVerticesRectAndMatrix(Rect& rect, Matrix4x4& matrix)
     {
-        int canvas_width = this->GetCanvas()->GetCamera()->GetTargetWidth();
-        int canvas_height = this->GetCanvas()->GetCamera()->GetTargetHeight();
-        int x = -canvas_width / 2 + (int) m_rect.x;
-        int y = canvas_height / 2 - (int) m_rect.y;
+        int x = (int) m_rect.x;
+        int y = (int) -m_rect.y;
 
         rect = Rect((float) x, (float) y, m_rect.width, m_rect.height);
 

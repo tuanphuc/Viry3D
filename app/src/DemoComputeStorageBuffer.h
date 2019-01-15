@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -51,8 +51,7 @@ void main()
 }
 )";
 
-            auto buffer = ByteBuffer(1024 * 1024 * 2 * sizeof(float));
-            m_buffer = Display::Instance()->CreateBuffer(buffer.Bytes(), buffer.Size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_FORMAT_UNDEFINED);
+            m_buffer = Display::Instance()->CreateBuffer(nullptr, 1024 * 1024 * 2 * sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true, VK_FORMAT_UNDEFINED);
 
             auto shader = RefMake<Shader>(cs);
             auto material = RefMake<Material>(shader);
@@ -122,7 +121,7 @@ void main()
             material->SetInt("uHeight", 1024);
             material->SetStorageBuffer("sImage", m_buffer);
 
-            m_blit_color_camera = Display::Instance()->CreateBlitCamera(1, Ref<Texture>(), material);
+            m_blit_color_camera = Display::Instance()->CreateBlitCamera(1, material);
 
             m_ui_camera->SetDepth(2);
 #endif

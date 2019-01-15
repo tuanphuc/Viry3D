@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ namespace Viry3D
         int GetWidth() const;
         int GetHeight() const;
         Camera* CreateCamera();
-        Camera* CreateBlitCamera(int depth, const Ref<Texture>& texture, const Ref<Material>& material = Ref<Material>(), const String& texture_name = "", CameraClearFlags clear_flags = CameraClearFlags::Invalidate, const Rect& rect = Rect(0, 0, 1, 1));
+        Camera* CreateBlitCamera(int depth, const Ref<Texture>& texture, CameraClearFlags clear_flags = CameraClearFlags::Invalidate, const Rect& rect = Rect(0, 0, 1, 1));
+        Camera* CreateBlitCamera(int depth, const Ref<Material>& material, CameraClearFlags clear_flags = CameraClearFlags::Invalidate, const Rect& rect = Rect(0, 0, 1, 1));
         void DestroyCamera(Camera* camera);
         int GetMaxSamples();
 #if VR_VULKAN
@@ -121,7 +122,7 @@ namespace Viry3D
         void UpdateUniformTexture(VkDescriptorSet descriptor_set, int binding, bool is_storage, const Ref<Texture>& texture);
         void UpdateStorageBuffer(VkDescriptorSet descriptor_set, int binding, const Ref<BufferObject>& buffer);
         void UpdateTexelBuffer(VkDescriptorSet descriptor_set, int binding, VkDescriptorType type, const Ref<BufferObject>& buffer);
-        Ref<BufferObject> CreateBuffer(const void* data, int size, VkBufferUsageFlags usage, VkFormat view_format);
+        Ref<BufferObject> CreateBuffer(const void* data, int size, VkBufferUsageFlags usage, bool device_local, VkFormat view_format);
         void UpdateBuffer(const Ref<BufferObject>& buffer, int buffer_offset, const void* data, int size);
         void ReadBuffer(const Ref<BufferObject>& buffer, ByteBuffer& data);
         void BuildInstanceCmd(

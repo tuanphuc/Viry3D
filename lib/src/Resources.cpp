@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -53,9 +53,11 @@ namespace Viry3D
         {
             String json = File::ReadAllText(full_path);
 
-            Json::Reader reader;
+            auto reader = Ref<Json::CharReader>(Json::CharReaderBuilder().newCharReader());
             Json::Value root;
-            if (reader.parse(json.CString(), root))
+            const char* begin = json.CString();
+            const char* end = begin + json.Size();
+            if (reader->parse(begin, end, &root, nullptr))
             {
                 String texture_name = root["name"].asCString();
                 int width = root["width"].asInt();

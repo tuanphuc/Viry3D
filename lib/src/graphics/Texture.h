@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -51,6 +51,14 @@ namespace Viry3D
         D24S8,
         D32S8,
         S8,
+        BC1_RGB,
+        BC1_RGBA,
+        BC2,
+        BC3,
+        ETC2_R8G8B8,
+        ETC2_R8G8B8A1,
+        ETC2_R8G8B8A8,
+        ASTC_4x4,
     };
 
     enum class FilterMode
@@ -76,6 +84,11 @@ namespace Viry3D
         friend class DisplayPrivate;
 
     public:
+        static Ref<Texture> LoadFromKTXFile(
+            const String& path,
+            FilterMode filter_mode,
+            SamplerAddressMode wrap_mode,
+            bool is_storage);
         static ByteBuffer LoadImageFromFile(const String& path, int& width, int& height, int& bpp);
         static Ref<Texture> LoadTexture2DFromFile(
             const String& path,
@@ -91,6 +104,15 @@ namespace Viry3D
             FilterMode filter_mode,
             SamplerAddressMode wrap_mode,
             bool gen_mipmap,
+            bool dynamic,
+            bool is_storage);
+        static Ref<Texture> CreateTexture2D(
+            int width,
+            int height,
+            TextureFormat format,
+            FilterMode filter_mode,
+            SamplerAddressMode wrap_mode,
+            bool mipmap,
             bool dynamic,
             bool is_storage);
         static Ref<Texture> CreateCubemap(
@@ -137,7 +159,7 @@ namespace Viry3D
         int GetMipmapLevelCount() const { return m_mipmap_level_count; }
         int GetArraySize() const { return m_array_size; }
         int GetSampleCount() const { return m_sample_count; }
-        void UpdateTexture2D(const ByteBuffer& pixels, int x, int y, int w, int h);
+        void UpdateTexture2D(const ByteBuffer& pixels, int x, int y, int w, int h, int level);
         void UpdateCubemap(const ByteBuffer& pixels, CubemapFace face, int level);
         void UpdateTexture2DArray(const ByteBuffer& pixels, int layer, int level);
         void GenMipmaps();
@@ -208,7 +230,7 @@ namespace Viry3D
         GLint m_internal_format;
         GLenum m_format;
         GLenum m_pixel_type;
-        bool m_have_storage;
+        Vector<GLboolean> m_have_storage;
         GLuint m_copy_framebuffer;
         bool m_render_texture;
         bool m_depth_texture;

@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -395,7 +395,7 @@ namespace Viry3D
                     m_instance_buffer->Destroy(Display::Instance()->GetDevice());
                     m_instance_buffer.reset();
                 }
-                m_instance_buffer = Display::Instance()->CreateBuffer(vectors.Bytes(), buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_FORMAT_UNDEFINED);
+                m_instance_buffer = Display::Instance()->CreateBuffer(vectors.Bytes(), buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true, VK_FORMAT_UNDEFINED);
 
                 this->MarkInstanceCmdDirty();
             }

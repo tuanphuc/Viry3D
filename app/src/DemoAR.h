@@ -1,6 +1,6 @@
 /*
 * Viry3D
-* Copyright 2014-2018 by Stack - stackos@qq.com
+* Copyright 2014-2019 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -206,9 +206,7 @@ void main()
                 
                 m_bg_camera = Display::Instance()->CreateBlitCamera(
                     0,
-                    Ref<Texture>(),
                     m_bg_material,
-                    "",
                     CameraClearFlags::ColorAndDepth);
 
                 m_scene_camera = Display::Instance()->CreateCamera();
@@ -223,19 +221,19 @@ void main()
 #if VR_VULKAN
                 shader = RefMake<Shader>(
                     "",
-                    Vector<String>({ "Diffuse.vs.in" }),
+                    Vector<String>({ "Diffuse.vs" }),
                     "",
                     "",
-                    Vector<String>({ "Diffuse.fs.in" }),
+                    Vector<String>({ "Diffuse.fs" }),
                     "",
                     render_state);
 #elif VR_GLES
                 shader = RefMake<Shader>(
                     "",
-                    Vector<String>({ "Diffuse.100.vs.in" }),
+                    Vector<String>({ "Diffuse.100.vs" }),
                     "",
                     "",
-                    Vector<String>({ "Diffuse.100.fs.in" }),
+                    Vector<String>({ "Diffuse.100.fs" }),
                     "",
                     render_state);
 #endif
